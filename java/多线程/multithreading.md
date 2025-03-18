@@ -31,11 +31,21 @@
       - [CAS](#cas)
   - [线程池](#线程池)
       - [线程池概述](#线程池概述)
-      - [ThreadPoolExecutor类](#threadpoolexecutor类)
+      - [`ThreadPoolExecutor`类](#threadpoolexecutor类)
         - [创建线程池](#创建线程池)
         - [提交任务](#提交任务)
         - [任务队列](#任务队列)
         - [拒绝策略](#拒绝策略)
+      - [线程池的状态](#线程池的状态)
+      - [`Executors` 类](#executors-类)
+  - [Callable](#callable)
+      - [Future](#future)
+      - [FutureTask](#futuretask)
+      - [submit()](#submit)
+  - [锁（Lock）](#锁lock)
+      - [获取锁](#获取锁)
+      - [condition](#condition)
+      - [ReadWriteLock](#readwritelock)
 
 
 
@@ -512,7 +522,7 @@ public class CAS {
 - 核心线程：已经创建好的并处在运行状态的一定数量的线程，它们不断从阻塞队列中获取任务并执行。
 - 阻塞队列：用来存储工作线程来不及处理的任务，当所有的工作线程都被占用后，之后的任务就会进入阻塞队列，等待某个线程执行完后才有机会被处理。
 
-#### ThreadPoolExecutor类
+#### `ThreadPoolExecutor`类
 
 **Excutor接口**
 
@@ -816,6 +826,17 @@ pool-1-thread-1 执行任务 7  // 核心线程复用
 **缺点：**
 - 容量固定，可能因队列过小导致频繁触发拒绝策略。
 
+**`ArrayBlockingQueue`原理**
+
+- `ArrayBlockingQueue`内部是通过 `Object[]` 数组保存数据的，本质上是通过数组实现的，ArrayBlockingQueue的大小即数组的容量·
+
+- `ArrayBlockingQueue`中包含一个`ReentrantLock`对象(可重入的互斥锁)，`ArrayBlockingQueue`就是根据该互斥锁实现“多线程对竞争资源的互斥访问”。同时，还可在创建时指定使用公平锁还是非公平锁（默认非公平锁）
+
+- ArrayBlockingQueue中包含两个Condition对象(notEmpty和notFull)，通过Condition可以实现对ArrayBlockingQueue的更精确的访问
+  - 某线程(线程A)要取数据时，数组正好为空，则该线程会执行notEmpty.await()进行等待；当其它某个线程(线程B)向数组中插入了数据之后，会调用notEmpty.signal()唤醒“notEmpty上的等待线程”。此时，线程A会被唤醒从而得以继续运行。
+  - 若某线程(线程H)要插入数据时，数组已满，则该线程会它执行notFull.await()进行等待；当其它某个线程(线程I)取出数据之后，会调用notFull.signal()唤醒“notFull上的等待线程”。此时，线程H就会被唤醒从而得以继续运行。
+
+
 **`LinkedBlockingQueue`（链表实现的无界/有界队列）**
 
 **特性：**
@@ -910,8 +931,8 @@ scheduler.schedule(
 | `ArrayBlockingQueue`  | 任务入队                  | 创建新线程（直到最大线程数） | 触发拒绝策略              |
 | `LinkedBlockingQueue` | 任务入队                  | 创建新线程（仅当有界队列满） | 触发拒绝策略（仅当有界）  |
 | `SynchronousQueue`    | 直接创建新线程（若未达最大）| 队列始终“满”，触发拒绝策略   | 触发拒绝策略              |
-| `PriorityBlockingQueue` | 任务按优先级入队         | 无界队列永不触发拒绝策略     | 无界队列永不触发拒绝策略  |
-
+| `PriorityBlockingQueue` | 任务按优先级入队         | 无界队列永不触发拒绝策略     | 无界队列永不触发拒绝策略    |   
+| `DelayedWorkQueue`   | 创建新线程（仅当有界队列满） | 无界队列永不触发拒绝策略     | 无界队列永不触发拒绝策略    |
 
 **生产环境建议**
 - **避免无界队列**：优先使用有界队列（如 `ArrayBlockingQueue` 或指定容量的 `LinkedBlockingQueue`），防止内存溢出。
@@ -930,44 +951,8 @@ scheduler.schedule(
 | `DiscardPolicy`                 | 静默丢弃被拒绝的任务                  |
 | `DiscardOldestPolicy`           | 丢弃队列最旧的任务，尝试重新提交      |
 
----
-
-**监控线程池状态**
-
-```java
-// 在任务执行过程中添加监控
-System.out.println("活跃线程数: " + executor.getActiveCount());
-System.out.println("已完成任务数: " + executor.getCompletedTaskCount());
-System.out.println("队列大小: " + executor.getQueue().size());
-```
-
-**合理设置线程数**
-   ```java
-   // 根据任务类型设置
-   int corePoolSize = Runtime.getRuntime().availableProcessors();
-   // CPU密集型：N+1
-   // IO密集型：2N
-   ```
-
-**优雅关闭**
-   ```java
-   executor.shutdown(); // 平缓关闭
-   if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-       executor.shutdownNow(); // 强制关闭
-   }
-   ```
-
-**使用ThreadFactory命名线程**
-   ```java
-   ThreadFactory factory = r -> {
-       Thread t = new Thread(r);
-       t.setName("订单处理线程-" + t.getId());
-       return t;
-   };
-   ```
 
 **自定义拒绝策略**
-
 ```java
 // 自定义日志记录+重试机制
 class CustomRejectionHandler implements RejectedExecutionHandler {
@@ -979,6 +964,850 @@ class CustomRejectionHandler implements RejectedExecutionHandler {
                 executor.getQueue().put(r); // 阻塞直到有空间
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+            }
+        }
+    }
+}
+```
+#### 线程池的状态
+
+线程池使用 int 的高三位来存储线程池的状态，其它的位数用来存储线程的数量，这些信息用是原子变量 ctl 来进行存储的。之所以这么做是为了只进行一次 CAS 操作就可以既改变线程池的状态，又可以改变线程池中线程的数量。
+
+线程池共有五种状态：
+- RUNNING（运行状态）：线程池被创建后就处于RUNNIG状态，接受新任务，并且也能处理阻塞队列中的任务。
+- SHUTDOWN（关闭状态）：不接受新任务，但可以处理阻塞队列中的任务。
+- STOP（停止状态）：中断正在执行的任务，并且抛弃阻塞队列的任务。
+- TIDYIDNG（整理状态）：如果所有的任务都执行完了，线程池就会进入该状态。该状态会执行 terminated 方法进入TERMINATED。
+- TERMINATED（终止状态）：执行完 terminated 方法后就会进入该状态，默认 terminated 方法什么也不做。
+
+
+**监控线程池状态**
+
+```java
+// 在任务执行过程中添加监控
+System.out.println("活跃线程数: " + executor.getActiveCount());
+System.out.println("已完成任务数: " + executor.getCompletedTaskCount());
+System.out.println("队列大小: " + executor.getQueue().size());
+```
+
+#### `Executors` 类
+
+`Executors` 是 Java 并发包 (`java.util.concurrent`) 中的一个工厂类，用于快速创建不同类型的线程池。它通过静态方法提供了多种线程池的实现，简化了线程池的配置过程。
+
+**newCachedThreadPool()**
+
+创建一个可缓存的线程池。这个线程池的线程数量可以根据需要自动扩展，如果有可用的空闲线程，就会重用它们；如果没有可用的线程，就会创建一个新线程。适用于执行大量的短期异步任务。
+
+- **适用场景**：处理大量短时任务（如 HTTP 请求）。
+  
+```java
+ExecutorService executor = Executors.newCachedThreadPool();
+
+for (int i = 0; i < 10; i++) {
+    executor.submit(() -> {
+        System.out.println("Task executed by " + Thread.currentThread().getName());
+        try {
+            Thread.sleep(1000); // 模拟短时任务
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    });
+}
+
+executor.shutdown(); // 关闭线程池
+```
+
+**newFixedThreadPool(int nThreads)**
+
+- **特点**：固定线程数量，不会自动扩展，无空闲线程回收。
+- **适用场景**：资源受限环境（如数据库连接池），固定数量的长期任务。
+- **示例**：
+
+```java
+ExecutorService executor = Executors.newFixedThreadPool(3);
+
+for (int i = 0; i < 5; i++) {
+    executor.submit(() -> {
+        System.out.println("FixedPool Task - " + Thread.currentThread().getName());
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    });
+}
+
+executor.shutdown();
+```
+
+
+**newSingleThreadExecutor()**
+- **特点**：单线程串行执行任务。
+- **适用场景**：保证任务顺序执行（如日志写入）。
+- **示例**：
+
+```java
+ExecutorService executor = Executors.newSingleThreadExecutor();
+
+executor.submit(() -> System.out.println("Task 1"));
+executor.submit(() -> System.out.println("Task 2"));
+executor.submit(() -> System.out.println("Task 3"));
+
+executor.shutdown();
+```
+
+
+**newScheduledThreadPool(int corePoolSize)**
+- **特点**：支持定时或周期性任务。
+- **适用场景**：心跳检测、定时数据同步。
+- **示例**：
+
+```java
+ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+
+// 延迟 3 秒后执行
+scheduler.schedule(() -> System.out.println("Delayed Task"), 3, TimeUnit.SECONDS);
+
+// 周期性任务：首次延迟 1 秒，之后每 2 秒执行一次
+scheduler.scheduleAtFixedRate(() -> 
+    System.out.println("Periodic Task - " + new Date()), 
+    1, 2, TimeUnit.SECONDS
+);
+
+// 运行一段时间后关闭
+Thread.sleep(10000);
+scheduler.shutdown();
+```
+
+**newWorkStealingPool(int parallelism)**
+
+- **特点**：创建一个工作窃取线程池，线程数量根据CPU核心数动态调整
+- **适用场景**：适用于CPU密集型的任务。
+
+```java
+    int parallelism = Runtime.getRuntime().availableProcessors();
+    ExecutorService executorService = Executors.newWorkStealingPool(parallelism);
+
+    for (int i = 0; i < 10; i++) {
+        final int taskId = i;
+        executorService.submit(() -> {
+            System.out.println("Task " + taskId + " is running on thread " + Thread.currentThread().getName());
+        });
+    }
+
+    executorService.shutdown();
+```
+
+**注意事项**
+- **资源泄漏风险**：必须调用 `shutdown()` 关闭线程池。
+- **阿里规约警告**：不建议直接使用 `Executors`，推荐通过 `ThreadPoolExecutor` 构造函数显式指定参数（避免 `newFixedThreadPool` 和 `newCachedThreadPool` 的潜在 OOM 问题）。
+- **自定义参数**：如需调整线程池行为（如拒绝策略），需手动创建 `ThreadPoolExecutor`。
+
+
+## Callable
+
+`Callable` 和 `Future` 是 Java 并发编程中用于处理异步任务返回结果的工具。与 `Runnable` 不同，`Callable` 允许任务返回值或抛出异常，而 `Future` 则用于获取异步任务的结果或状态。
+
+**与 Runnable 的区别**
+
+| **特性**               | **Runnable**                     | **Callable**                     |
+|------------------------|----------------------------------|----------------------------------|
+| **返回值**             | 无 (`void`)                     | 有 (泛型 `T`)                   |
+| **异常处理**           | 不能抛出受检异常                | 可抛出受检异常                  |
+| **提交到线程池的方法** | `execute(Runnable)` 或 `submit` | `submit(Callable)`              |
+
+
+
+####  Future
+
+`Future` 是一个接口，它表示一个异步计算的结果。它提供了获取任务结果的方法，以及取消任务的方法。
+
+**Future 的常用方法**
+
+| **方法**                   | **说明**                                                                 |
+|---------------------------|--------------------------------------------------------------------------|
+| `get()`                   | 阻塞直到任务完成并返回结果                                               |
+| `get(long timeout, TimeUnit unit)` | 阻塞指定时间，超时抛出 `TimeoutException`                                 |
+| `isDone()`                | 返回任务是否完成（正常结束、异常或取消）                                 |
+| `cancel(boolean mayInterruptIfRunning)` | 尝试取消任务，`true` 表示允许中断运行中的任务                           |
+| `isCancelled()`           | 返回任务是否被取消                                                        |
+
+```java
+public class TestFuture {
+
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+
+        System.out.println("任务不想做，让其它线程去处理吧" + System.currentTimeMillis());
+
+        Future<String> future = executor.submit(()->{    //提交任务
+            System.out.println("我正在执行任务....." + System.currentTimeMillis());
+            Thread.sleep(20000);
+            return "任务完成~~" + System.currentTimeMillis();
+        });
+
+        System.out.println("主线程继续执行" + System.currentTimeMillis());
+
+        int count = 0;
+        while( !future.isDone() ){     //判断任务是否完成
+            System.out.println("--- 任务还没有完成 ---");
+            Thread.sleep(1000);
+            count++;
+            if(count == 5){
+                future.cancel(true);    //如果任务执行时间过长，我们可以取消任务
+            }
+        }
+
+        //String result = future.get();   //调用get方法如果其它线程还没有返回结果，会阻塞主线程直到其它线程返回结果
+        //调用了 get() 时，如果任务被取消了，会抛出 CancellationException 异常。
+        //所以这里不能直接 get()，需要先判断任务是否被取消了。
+        if( !future.isCancelled() ){
+            String result = future.get();   //调用get方法如果其它线程还没有返回结果，会阻塞主线程直到其它线程返回结果
+            System.out.println("返回结果是: " + result);
+        }else {
+            System.out.println("任务已被取消！！");
+        }   
+
+        executor.shutdown();    //关闭线程池
+    }
+}
+```
+
+**超时控制**
+
+避免因任务长时间未完成导致主线程阻塞：
+
+```java
+try {
+    // 最多等待 1 秒，超时抛出 TimeoutException
+    Integer result = future.get(1, TimeUnit.SECONDS);
+} catch (TimeoutException e) {
+    System.out.println("任务超时，取消任务");
+    future.cancel(true); // 中断任务
+}
+```
+
+#### FutureTask
+
+`FutureTask` 是一个 `Future` 的实现类，实现了 RunnableFuture 接口，见名知意，RunnableFuture 接口同时继承了 Runnable 接口和 Future 接口
+
+具有 Runnable 的特性，创建类继承 RunnableFuture 接口并重写 run() 后，可以创建线程来执行这个任务。
+
+```java
+public class TestRunnableFuture implements RunnableFuture {     //将RunnableFuture当做Runnbale来使用
+
+    @Override
+    public void run() {                                 //可以将该类的对象作为Runnable类型的任务提交给一个线程执行
+        System.out.println("重写run方法，线程会执行");      // new Thread(testRunnableFuture).start(); 创建线程来执行
+    }
+}
+```
+
+具有 Future 的特性，可以获取任务的返回值（只有使用 Callable 提交的任务才有返回值）
+
+**重写的run()**
+
+```java
+public void run() {
+      // 如果状态不是 NEW，说明任务已经执行过或者已经被取消，直接返回
+      // 如果状态是 NEW，则尝试把执行线程保存在 runnerOffset（runner字段），如果赋值失败，则直接返回
+    if (state != NEW ||
+        !UNSAFE.compareAndSwapObject(this, runnerOffset,
+                                     null, Thread.currentThread()))
+        return;
+    try {
+          // 获取构造函数传入的 Callable 值
+        Callable<V> c = callable;
+        if (c != null && state == NEW) {
+            V result;
+            boolean ran;
+            try {
+                  // 正常调用 Callable 的 call 方法就可以获取到返回值
+                result = c.call();
+                ran = true;
+            } catch (Throwable ex) {
+                result = null;
+                ran = false;
+                  // 保存 call 方法抛出的异常, CAS操作
+                setException(ex);
+            }
+            if (ran)
+                  // 保存 call 方法的执行结果, CAS操作
+                set(result);
+        }
+    } finally {        
+        runner = null;       
+        int s = state;
+          // 如果任务被中断，则执行中断处理
+        if (s >= INTERRUPTING)
+            handlePossibleCancellationInterrupt(s);
+    }
+}
+```
+
+通过构造方法中Executor类的使用，可以把Runnable 类型的任务转换成 Callable 类型的任务
+
+```java
+public FutureTask(Runnable runnable, V result) {
+    this.callable = Executors.callable(runnable, result);
+    this.state = NEW;       // ensure visibility of callable
+}
+
+public FutureTask(Callable<V> callable) {
+    if (callable == null)
+        throw new NullPointerException();
+    this.callable = callable;
+    this.state = NEW;       // ensure visibility of callable
+}
+```
+
+不管是 Runnable 还是 Callable 类型，FutureTask 都会把其封装成 Callable。如果是 Runnable 类型，就调用 Executors.callable()，该方法可以把 Runnable 类型的任务变成 Callable 类型。
+
+```java
+public class TestFutureTask {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+
+        FutureTask<String> futureTask = new FutureTask<>(()->{
+            System.out.println("正在执行任务");
+            System.out.println(Thread.currentThread().getName());
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }, "我是返回值");        //这是一个Runnable类型的任务
+
+        //既可以通过线程池来执行FutureTask提交的任务
+        ExecutorService exector = Executors.newFixedThreadPool(3);
+        exector.submit(futureTask);
+
+        //也可以通过新建一个线程来执行FutureTask提交的任务
+        new Thread(futureTask).start();
+
+        while( !futureTask.isDone() ){
+           System.out.println("--- 任务还没有执行完 ---");
+           Thread.sleep(1000);
+        }
+
+        String result = futureTask.get();
+
+        System.out.println(result);
+
+        exector.shutdown();
+    }
+}
+```
+
+#### submit()
+
+`submit()` 方法是 `ExecutorService` 接口提供的一个方法，用于提交一个 `Runnable` 或 `Callable` 任务到执行器中执行。该方法返回一个 `Future` 对象，该对象可以用来获取任务执行的结果。
+
+submit() 既可以接收 Runnable 类型的参数，也可以接收 Callable 类型的参数，然后将其封装到一个 FutureTask 对象中，因为 FutureTask  间接实现了 Runnable 接口，所以在 submit() 中可以直接使用 execute() 来执行这个任务并且通过返回 FutureTask  对象来获取任务的返回值以及其他信息。
+
+```java
+public abstract class AbstractExecutorService implements ExecutorService {
+
+    protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+        return new FutureTask<T>(runnable, value);
+    }
+
+    protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
+        return new FutureTask<T>(callable);
+    }
+
+    public Future<?> submit(Runnable task) {
+        if (task == null) throw new NullPointerException();
+        RunnableFuture<Void> ftask = newTaskFor(task, null);
+        execute(ftask);
+        return ftask;
+    }
+
+    public <T> Future<T> submit(Runnable task, T result) {
+        if (task == null) throw new NullPointerException();
+        RunnableFuture<T> ftask = newTaskFor(task, result);
+        execute(ftask);
+        return ftask;
+    }
+
+    public <T> Future<T> submit(Callable<T> task) {
+        if (task == null) throw new NullPointerException();
+        RunnableFuture<T> ftask = newTaskFor(task);
+        execute(ftask);
+        return ftask;
+    }
+}
+```
+
+ - FutureTask 类中有一个 Callable 类型的成员变量 callable，通过构造方法创建一个对象
+   - 如果是 Callable 类型的任务，就直接将该 Callable 任务的实例赋值给成员变量 callable。
+   - 如果是 Runnable 类型的任务，在构造方法中需要显示的设置返回值 result 对象，通过构造方法调用 Executors.callable()， 而 callable() 中是通过 RunnableAdapter  类的构造方法将 Runnable 任务和 result 返回值封装成 Callable 对象。
+ - 因为 FutureTask 间接实现了 Runnable 接口，所以我们既可以在线程池中提交 FutureTask 中的任务，也可以创建一个新的线程来执行这个任务。
+ - FutureTask  对象可以直接获取任务的返回值，所以在线程池中使用时，只是将 FutureTask 当做 Runnable 类型的任务在使用，不需要再通过 submit() 返回的 FutureTask 对象来获取返回值。比如下面的例子
+
+```java
+public class TestFutureTask {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+
+        ExecutorService exector = Executors.newFixedThreadPool(3);  //通过线程池来使用FutureTask
+
+
+        FutureTask<String> futureTask = new FutureTask<>(()->{
+            System.out.println("正在执行任务");
+            System.out.println(Thread.currentThread().getName());
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }, "我是返回值");        //这是一个Runnable类型的任务
+
+        //只是将futureTask当做 Runnable 类型的任务
+        Future<String> future1 = exector.submit(futureTask, "我不是任务的返回值");
+
+        while( !future1.isDone() ){
+           System.out.println("--- 任务还没有执行完 ---");
+           Thread.sleep(1000);
+        }
+
+        String result = futureTask.get();
+
+        String result1 = future1.get();
+
+        System.out.println("futureTask.get() = " + result);  //futureTask.get() = 我是返回值
+        System.out.println("future1.get() = " + result1);  //future1.get() = 我不是任务的返回值
+
+        exector.shutdown();
+    }
+}
+```
+
+## 锁（Lock）
+
+Lock 是 java.util.concurrent.locks 包下的接口，Lock 实现提供了比 synchronized 关键字更广泛的锁操作，它能以更优雅的方式处理线程同步问题。
+
+**lock接口中的方法**
+
+```java
+public interface Lock {
+    
+    // 获取锁  
+    void lock()
+
+    // 如果当前线程未被中断，则获取锁，可以响应中断  
+    void lockInterruptibly()
+
+    // 返回绑定到此 Lock 实例的新 Condition 实例  
+    Condition newCondition()
+
+    // 仅在调用时锁为空闲状态才获取该锁，可以响应中断  
+    boolean tryLock()
+
+    // 如果锁在给定的等待时间内空闲，并且当前线程未被中断，则获取锁  
+    boolean tryLock(long time, TimeUnit unit)
+
+    // 释放锁  
+    void unlock()
+}
+```
+
+#### 获取锁
+
+**lock()**
+
+使用lock()获取锁，如果锁已被其他线程获取，则进行等待，必须主动去释放锁，并且在发生异常时，不会自动释放锁。
+因此，一般来说，使用 Lock 必须在 try…catch 块中进行，并且将释放锁的操作放在 finally 块中进行，以保证锁一定被被释放，防止死锁的发生
+
+
+```java
+Lock lock = ...;
+lock.lock();
+try{
+    //处理任务
+}catch(Exception ex){
+
+}finally{
+    lock.unlock();   //释放锁
+} 
+```
+
+**tryLock()**
+
+tryLock() 是有返回值的，它表示用来尝试获取锁，如果获取成功，则返回 true；如果获取失败（即锁已被其他线程获取），则返回 false，也就是说，这个方法无论如何都会立即返回（在拿不到锁时不会一直在那等待）。
+
+```java
+Lock lock = ...;
+if(lock.tryLock()) {
+     try{
+         //处理任务
+     }catch(Exception ex){
+
+     }finally{
+         lock.unlock();   //释放锁
+     } 
+}else {
+    //如果不能获取锁，则直接做其他事情
+}
+```
+
+**tryLock(long time, TimeUnit unit)**
+
+tryLock(long time, TimeUnit unit) 和 tryLock() 是类似的，只不过区别在于这个方法在拿不到锁时会等待一定的时间，在时间期限之内如果还拿不到锁，就返回 false，同时可以响应中断。如果一开始拿到锁或者在等待期间内拿到了锁，则返回 true。
+
+**lockInterruptibly()**
+
+`lockInterruptibly()` 允许线程在等待锁的过程中**响应中断**。与普通的 `lock()` 方法不同，`lockInterruptibly()` 在获取锁的阻塞期间，若线程被其他线程调用 `interrupt()` 中断，会立即抛出 `InterruptedException`，从而使线程能够退出等待状态并处理中断
+
+**核心特性**
+- **可中断性**：线程在等待锁时可以被外部中断。
+- **异常处理**：若线程被中断，会抛出 `InterruptedException`，需捕获处理。
+- **适用场景**：需要避免线程因长时间等待锁而无法终止的场景（如死锁预防、任务取消）。
+
+```java
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class LockInterruptiblyDemo {
+    private static final Lock lock = new ReentrantLock();
+
+    public static void main(String[] args) throws InterruptedException {
+        // 线程1：先获取锁并长期持有
+        Thread thread1 = new Thread(() -> {
+            lock.lock();
+            try {
+                System.out.println("Thread1 获取锁，将长期持有...");
+                Thread.sleep(10000); // 模拟长时间占用锁
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
+                System.out.println("Thread1 释放锁");
+            }
+        });
+
+        // 线程2：尝试通过 lockInterruptibly() 获取锁
+        Thread thread2 = new Thread(() -> {
+            try {
+                System.out.println("Thread2 尝试获取锁...");
+                lock.lockInterruptibly(); // 可中断的锁获取
+                try {
+                    System.out.println("Thread2 成功获取锁");
+                } finally {
+                    lock.unlock();
+                }
+            } catch (InterruptedException e) {
+                System.out.println("Thread2 在等待锁时被中断！");
+            }
+        });
+
+        thread1.start();
+        Thread.sleep(100); // 确保 thread1 先获取锁
+        thread2.start();
+
+        // 主线程等待一段时间后中断 thread2
+        Thread.sleep(2000);
+        thread2.interrupt(); // 中断 thread2 的等待
+    }
+}
+```
+
+**输出**：
+```bash
+Thread1 获取锁，将长期持有...
+Thread2 尝试获取锁...
+Thread2 在等待锁时被中断！  (2秒后输出)
+Thread1 释放锁             (10秒后输出)
+```
+
+**注意事项**
+- 使用 `lockInterruptibly()` 时，必须处理中断异常（`InterruptedException`），否则可能导致线程意外终止。
+- 即使发生中断，仍需在 `finally` 块中检查锁的持有状态并释放锁，避免死锁。
+
+**中断的语义**  
+   - 线程被中断后，会立即退出锁等待队列。  
+   - 中断是协作式的：线程需主动检查中断状态或捕获异常，才能响应中断。
+
+**与 `tryLock()` 的区别**  
+   - `tryLock()` 支持超时和非阻塞尝试，但不直接响应中断。  
+   - `lockInterruptibly()` 专门用于可中断的阻塞等待。
+
+**应用场景**
+- **死锁预防**：当检测到潜在死锁时，中断某个等待锁的线程以打破僵局。
+- **任务取消**：若线程需要执行一个可能长时间阻塞的任务，可通过中断终止其等待。
+- **响应式系统**：在需要快速响应外部事件（如用户取消操作）的系统中，避免线程无限制等待。
+
+
+
+#### condition
+
+在使用 synchronized 进行同步的情况中，每个锁对象都关联着一个 Monitor 对象，我们称之为监视器。Monitor 不仅实现了线程同步，还提供了 wait() 和 notify() 等方法实现了线程间的通信。与 synchronized 类似，每个 Lock 对象也关联着另一个对象来实现线程间的通信，而这个对象就是 Condition。
+
+| 对比项                            | Object监视器                                 | Condition                                                                 |
+|-----------------------------------|---------------------------------------------|---------------------------------------------------------------------------|
+| **前置条件**                      | 获取对象的锁                                | 1. 调用`Lock.lock()`获取锁<br>2. 通过`Lock.newCondition()`获取Condition对象 |
+| **调用方式**                      | 直接调用`Object.notify()`                   | 直接调用`condition.await()`                                               |
+| **等待队列个数**                  | 一个                                        | 多个                                                                      |
+| **释放锁进入等待状态**            | 支持                                        | 支持                                                                      |
+| **等待中响应中断**                | 不支持                                      | 支持                                                                      |
+| **支持超时等待**                  | 支持                                        | 支持                                                                      |
+| **支持定时等待**                  | 不支持                                      | 支持                                                                      |
+| **唤醒单个线程**                  | 支持`notify()`                              | 支持`condition.signal()`                                                  |
+| **唤醒全部线程**                  | 支持`notifyAll()`                           | 支持`condition.signalAll()`                                               |
+
+**核心方法**
+| **方法**               | **说明**                                                                 |
+|------------------------|--------------------------------------------------------------------------|
+| `await()`              | 释放锁并进入等待状态，直到被唤醒或中断。                                  |
+| `awaitUninterruptibly()` | 类似 `await()`，但不响应中断。                                           |
+| `awaitNanos(long)`     | 在指定纳秒时间内等待，超时后自动唤醒。                                    |
+| `signal()`             | 唤醒一个等待在此条件上的线程（类似 `notify()`）。                         |
+| `signalAll()`          | 唤醒所有等待在此条件上的线程（类似 `notifyAll()`）。                      |
+
+
+**使用示例：生产者-消费者模型**
+```java
+public class ProducerConsumerDemo {
+    private final Queue<Integer> queue = new LinkedList<>();
+    private final int capacity = 5;
+    private final Lock lock = new ReentrantLock();
+    private final Condition notFull = lock.newCondition();  // 队列未满条件
+    private final Condition notEmpty = lock.newCondition(); // 队列非空条件
+
+    // 生产者方法
+    public void produce(int value) throws InterruptedException {
+        lock.lock();
+        try {
+            // 队列已满，生产者等待
+            while (queue.size() == capacity) {
+                notFull.await();
+            }
+            queue.add(value);
+            System.out.println("生产: " + value + "，队列大小: " + queue.size());
+            notEmpty.signal(); // 唤醒一个消费者
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // 消费者方法
+    public int consume() throws InterruptedException {
+        lock.lock();
+        try {
+            // 队列为空，消费者等待
+            while (queue.isEmpty()) {
+                notEmpty.await();
+            }
+            int value = queue.poll();
+            System.out.println("消费: " + value + "，队列大小: " + queue.size());
+            notFull.signal(); // 唤醒一个生产者
+            return value;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public static void main(String[] args) {
+        ProducerConsumerDemo demo = new ProducerConsumerDemo();
+
+        // 生产者线程
+        new Thread(() -> {
+            for (int i = 1; i <= 10; i++) {
+                try {
+                    demo.produce(i);
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        // 消费者线程
+        new Thread(() -> {
+            for (int i = 1; i <= 10; i++) {
+                try {
+                    demo.consume();
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+}
+```
+
+
+**Condition 的优势**
+
+- **多条件队列**
+  - **传统 `wait()`/`notify()`**：一个对象的监视器只能有一个等待队列，无法区分不同条件。
+  - **`Condition`**：通过多个 `Condition` 对象管理不同条件的线程。  
+    例如：生产者等待 `notFull`，消费者等待 `notEmpty`，唤醒更精准。
+
+- **更灵活的唤醒策略**
+  - **精准唤醒**：通过 `signal()` 唤醒特定条件的线程，避免无效竞争。
+  - **减少虚假唤醒**：结合 `while` 循环检查条件，防止虚假唤醒（如 `await()` 返回后需重新检查条件）。
+
+- **支持超时和中断**
+  - **超时控制**：`awaitNanos()`/`await(long, TimeUnit)` 避免无限等待。
+  - **可中断等待**：`await()` 响应中断，提升程序健壮性。
+
+
+**超时等待**
+```java
+lock.lock();
+try {
+    boolean isConditionMet = notEmpty.await(2, TimeUnit.SECONDS);
+    if (isConditionMet) {
+        // 条件满足
+    } else {
+        // 超时处理
+    }
+} finally {
+    lock.unlock();
+}
+```
+
+**不可中断等待**
+```java
+lock.lock();
+try {
+    notEmpty.awaitUninterruptibly(); // 不响应中断
+} finally {
+    lock.unlock();
+}
+```
+
+**应用场景**
+- **生产者-消费者模型**：精准控制生产者和消费者的等待与唤醒。
+- **线程池任务调度**：根据任务队列状态动态调整工作线程。
+- **阻塞队列实现**：如 `ArrayBlockingQueue` 内部依赖 `Condition`。
+- **复杂状态依赖**：多条件协调的场景（如交通信号灯控制）。
+
+
+#### ReadWriteLock
+
+ReadWriteLock 是一种锁，它允许多个线程同时进行读操作，但当一个线程进行写操作时，其他线程会被阻塞。
+
+```java
+public interface ReadWriteLock {
+    /**
+     * Returns the lock used for reading.
+     * 返回读锁
+     * @return the lock used for reading
+     */
+    Lock readLock();
+
+    /**
+     * Returns the lock used for writing.
+     * 返回写锁 
+     * @return the lock used for writing
+     */
+    Lock writeLock();
+}
+```
+
+一个简单的ReadWriteLock实现：
+```java
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class SimpleReadWriteLock {
+    // 内部维护的读锁和写锁状态
+    private int readCount = 0;      // 当前持有读锁的线程数
+    private int writeCount = 0;     // 写锁的重入次数（0 表示无写锁）
+    private Thread writeOwner;      // 写锁持有线程（用于重入判断）
+
+    // 同步控制的核心锁
+    private final Lock syncLock = new ReentrantLock();
+    // 条件变量：写锁等待队列（写线程在此等待）
+    private final Condition writeCondition = syncLock.newCondition();
+    // 条件变量：读锁等待队列（读线程在此等待）
+    private final Condition readCondition = syncLock.newCondition();
+
+    // 读锁对象
+    public Lock readLock() {
+        return new ReadLock();
+    }
+
+    // 写锁对象
+    public Lock writeLock() {
+        return new WriteLock();
+    }
+
+    //------------------------ 读锁实现 ------------------------
+    private class ReadLock implements Lock {
+        @Override
+        public void lock() {
+            syncLock.lock();
+            try {
+                // 如果有写锁被持有，且不是当前线程持有写锁（即非锁降级），则等待
+                while (writeCount > 0 && writeOwner != Thread.currentThread()) {
+                    readCondition.await();
+                }
+                readCount++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                syncLock.unlock();
+            }
+        }
+
+        @Override
+        public void unlock() {
+            syncLock.lock();
+            try {
+                readCount--;
+                if (readCount == 0) {
+                    // 唤醒等待的写线程
+                    writeCondition.signal();
+                }
+            } finally {
+                syncLock.unlock();
+            }
+        }
+    }
+
+    //------------------------ 写锁实现 ------------------------
+    private class WriteLock implements Lock {
+        @Override
+        public void lock() {
+            syncLock.lock();
+            try {
+                // 如果已有写锁持有者，且不是当前线程，则等待
+                while (writeCount > 0 && writeOwner != Thread.currentThread()) {
+                    writeCondition.await();
+                }
+                // 如果有读锁被持有，等待
+                while (readCount > 0) {
+                    writeCondition.await();
+                }
+                writeCount++;
+                writeOwner = Thread.currentThread(); // 记录写锁持有者
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                syncLock.unlock();
+            }
+        }
+
+        @Override
+        public void unlock() {
+            syncLock.lock();
+            try {
+                writeCount--;
+                if (writeCount == 0) {
+                    writeOwner = null;
+                    // 优先唤醒等待的写线程（避免写线程饥饿）
+                    writeCondition.signal();
+                    // 唤醒所有读线程
+                    readCondition.signalAll();
+                }
+            } finally {
+                syncLock.unlock();
             }
         }
     }
