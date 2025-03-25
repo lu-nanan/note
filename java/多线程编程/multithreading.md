@@ -312,7 +312,7 @@ public class YieldExample {
 
 #### 状态转移
 
-![图 0](images/5d57a228e3d059962ae0413807c7342e180b09097ea73cf4564e95b8cbb84f68.png)  
+![图 0](../../images/711c70f50a228a3d143cd7e54c685a55f85ef1efa2b5958cee68d168d0e92974.png)  
 
 
 #### 获取线程状态
