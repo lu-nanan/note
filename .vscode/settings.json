@@ -12,5 +12,6 @@
         "other": "on",
         "comments": "off",
         "strings": "on"
-    }
+    },
+    "markdown.validate.enabled": true
 }

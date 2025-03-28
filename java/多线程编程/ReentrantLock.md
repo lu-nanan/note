@@ -13,7 +13,7 @@
       - [**1. 可中断锁（lockInterruptibly()）**](#1-可中断锁lockinterruptibly)
       - [**2. 超时获取锁（tryLock(long timeout, TimeUnit unit)）**](#2-超时获取锁trylocklong-timeout-timeunit-unit)
     - [**五、等待队列（CLH队列变种）**](#五等待队列clh队列变种)
-    - [**七、性能优化与注意事项**](#七性能优化与注意事项)
+    - [**六、性能优化与注意事项**](#六性能优化与注意事项)
 
 
 ### **一、Lock的底层实现核心：AQS框架**
@@ -319,7 +319,7 @@ private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
 - **入队操作**：  
   通过`CAS`将新节点添加到队列尾部，确保线程安全。
 
-### **七、性能优化与注意事项**
+### **六、性能优化与注意事项**
 1. **减少锁竞争**：  
    - 缩小临界区范围。
    - 使用读写锁（`ReentrantReadWriteLock`）分离读/写操作。
