@@ -10,7 +10,7 @@
       - [**标记-清除算法（Mark-Sweep）**](#标记-清除算法mark-sweep)
       - [**复制算法（Copying）**](#复制算法copying)
       - [**标记-整理算法（Mark-Compact）**](#标记-整理算法mark-compact)
-    - [**分代收集算法（Generational Collection）**](#分代收集算法generational-collection)
+      - [**分代收集算法（Generational Collection）**](#分代收集算法generational-collection)
     - [**现代 GC 算法**](#现代-gc-算法)
       - [**CMS（Concurrent Mark-Sweep）**](#cmsconcurrent-mark-sweep)
       - [**G1（Garbage-First）**](#g1garbage-first)
@@ -151,7 +151,7 @@
 - **应用场景**：老年代回收（如 Serial Old、Parallel Old 收集器）。
 
 
-### **分代收集算法（Generational Collection）**
+#### **分代收集算法（Generational Collection）**
 - **核心思想**：根据对象存活周期将堆内存划分为新生代（Young Generation）和老年代（Old Generation），不同代采用不同算法。
   - **新生代**：对象存活率低，使用**复制算法**（如 Eden → Survivor）。
   - **老年代**：对象存活率高，使用**标记-清除**或**标记-整理**。
