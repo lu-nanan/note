@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自定义指令</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <h2>当前的n的值是:<span v-text="n"></span></h2>
+        <h2>放大十倍后的n的值是:<span v-big="n"></span></h2>
+        <button @click="n++">点我n++</button>
+        <hr/>
+        <input type="text" v-model="n"></input>
+        <input type="text" v-fmodel="n"></input>
+    </div>
+
+    <script>
+        new Vue({
+            el:'#root',    
+            data:{
+                n:1,
+            },
+            directives:{                
+                big(element,binding){
+                    element.innerText = binding.value * 10
+                },
+                fmodel:{
+                    bind(element,binding){
+                        console.log('bind')
+                        //指令与元素成功绑定时调用
+                    },
+                    inserted(element,binding){
+                        console.log('inserted')
+                        //指令所在元素被插入页面时调用
+                        element.value = binding.value * 2
+                        element.focus()
+                    },
+                    update(element,binding){
+                        console.log('update')
+                        //指令所在模板被重新解析时调用
+                        element.value = binding.value
+                        element.focus()
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>v-text</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <div>你好，{{name}}</div>
+        <hr/>
+        <div v-text="str"></div>
+        <!-- 输出：<div>你好，jack</div> 无法解析 -->
+        <div v-html="str"></div>
+        <!-- 输出：你好，jack，可以解析 -->
+    </div>
+
+    <script>
+        new Vue({
+            el:'#root',    
+            data:{
+                name:'jack',
+                str:'<div>你好，jack</div>'
+            }
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>v-pre</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <h2 v-pre>显示n的值</h2>
+        <!-- 正常显示 -->
+        <div>当前n的值是：{{n}}</div>
+        <!-- v-pre 不会解析，显示 {{n}} -->
+        <div v-pre>当前n的值是：{{n}}</div>
+        <button @click="n++">点我n++</button>
+    </div>
+
+    <script>
+        new Vue({
+            el:'#root',    
+            data:{
+                n:1,
+            }
+        })
+    </script>
+</body>
+</html>

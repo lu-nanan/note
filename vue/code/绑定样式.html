@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绑定样式</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+
+    <style>
+        .normal{
+            background-color: red;
+        }
+        .active{
+            background-color: green;
+        }
+    </style>
+
+</head>
+<body>
+    <div id="root">
+        <!-- 绑定class -->
+        <div class="basic" :class="a" @click="changeMod">Hello</div>
+        <!-- 绑定style样式 -->
+        <div class="basic" :style="styleObj">Hello</div>
+    </div>
+
+    <script>
+
+        new Vue({
+            el:'#root',    
+            data:{
+                a:"normal",
+                // 此处要绑定的样式还可以是数组(绑定多个样式)
+                // a:['s1','s2'...]
+                // 修改样式时，修改数组的值即可
+                styleObj:{
+                    color:'red',
+                    fontSize:'20px'
+                }
+            },
+            methods:{
+                changeMod(){
+                    this.a = this.a === "normal" ? "active" : "normal"
+                }
+            }
+        })
+    </script>
+</body>
+</html>

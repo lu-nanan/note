@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>列表过滤</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <h1> person List </h1>
+        <input type="text" v-model="keyword" placeholder="输入姓名">
+        <ul>
+            <li v-for="p in filperson" :key="p.id"> 
+                {{p.name}} -- {{p.age}} -- {{p.sex}}
+            </li>
+        </ul>
+    </div>
+
+    <script>
+        const vm = new Vue({
+            el:'#root',    
+            data:{
+                keyword:"",
+                persons:[
+                    {id:"001",name:"马冬梅",age:18,sex:"女"},
+                    {id:"002",name:"周冬雨",age:19,sex:"女"},
+                    {id:"003",name:"周杰伦",age:20,sex:"男"},
+                    {id:"004",name:"温兆伦",age:21,sex:"男"}
+                ],
+                filperson:[]
+            },
+            watch:{
+                keyword:{
+                    immediate:true,
+                    handler(newValue){
+                        console.log(newValue)
+                        this.filperson = this.persons.filter((p)=>{
+                            return p.name.indexOf(newValue) !== -1
+                        })
+                    }
+                } 
+            }
+        })
+    </script>
+</body>
+</html>

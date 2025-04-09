@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue.set</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <h1> Student Info </h1>
+        <button @click="addSex">点击添加性别属性，默认男</button>
+        <h2>姓名:{{ student.name }}</h2>
+        <h2 v-if="student.sex">性别:{{ student.sex }}</h2>
+        <h2>年龄:{{ student.age }}</h2>
+    </div>
+
+    <script>
+        const vm = new Vue({
+            el:'#root',    
+            data:{  
+                student:{
+                    name:"张三",
+                    age:18,
+                }
+            },
+            methods:{
+                addSex(){
+                    Vue.set(this.student,'sex','男')
+                    //this.$set(this.student,'sex','男')  功能同上
+                }
+            }
+        })
+    </script>
+</body>
+</html>

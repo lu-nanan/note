@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天气案例</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <h2>今天天气很{{ weather }}</h2>
+        <button @click="ishot = !ishot">切换天气</button>
+    </div>
+
+    <script>
+        const vm = new Vue({
+            el:'#root',  
+            data:{
+                ishot: true,
+                numbers:{
+                    a:1,
+                    b:2
+                }
+            },
+            computed:{
+                weather(){
+                    return this.ishot ? '炎热' : '凉爽'
+                }
+            },
+            // watch:{
+            //     ishot:{
+            //         handler(newValue,oldValue){
+            //             console.log('ishot发生变化了',newValue,oldValue)
+            //         },
+            //         immediate:true
+            //     },
+            // }
+
+            //简写：当不需要immediate，deep等属性时，可以简写
+            watch:{
+                ishot(newValue,oldValue){
+                    console.log('ishot发生变化了',newValue,oldValue)
+                },
+            }
+        })
+    </script>
+</body>
+</html>

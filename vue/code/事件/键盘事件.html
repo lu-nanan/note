@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <input type="text" placeholder="按下回车提示输入" @keyup.enter="showInfo">
+    </div>
+
+    <script>
+        new Vue({
+            el:'#root',  
+            data:{},
+            methods:{
+                showInfo(event){
+                    //if (event.keyCode !== 13) return
+                    console.log(event.target.value)
+                },
+            }
+        })
+    </script>
+</body>
+</html>

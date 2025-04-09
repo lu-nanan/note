@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生命周期-mounted</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <h2 :style="{opacity}">Hello</h2>
+    </div>
+
+    <script>
+        const vm = new Vue({
+            el:'#root',    
+            data:{
+                opacity:1,
+            },
+            //生命周期函数
+            mounted(){
+                // 完整解析 DOM 元素，挂载完毕时调用，且只调用一次（初始时）
+                setInterval(() => {
+                    this.opacity -= 0.01
+                    if(this.opacity <= 0){
+                        this.opacity = 1
+                    }
+                },16)
+            }
+        })
+    </script>
+</body>
+</html>

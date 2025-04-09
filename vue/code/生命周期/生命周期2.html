@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生命周期</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <h2 :style="{opacity}">Hello</h2>
+        <button @click="stop">点我停止变换（温柔版）</button>
+        <button @click="opacity = 1">透明度设置为1</button>
+        <button @click="stop2">点我停止变换（暴力版）</button>
+    </div>
+
+    <script>
+        const vm = new Vue({
+            el:'#root',    
+            data:{
+                opacity:1,
+            },
+            methods:{
+                stop(){
+                    clearInterval(this.timer)
+                },
+                stop2(){
+                    this.$destroy()
+                }
+            },
+            mounted(){
+                this.timer = setInterval(() => {
+                    this.opacity -= 0.01
+                    if(this.opacity <= 0){
+                        this.opacity = 1
+                    }
+                },16)
+            },
+            destroyed(){
+                clearInterval(this.timer)
+            }
+
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绑定样式</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <!-- 使用v-show做条件渲染-->
+        <h2 v-show="isShow1">Hello1</h2>
+        <button @click="changeMod1">点我{{ state1 }}Hello1</button>
+
+        <!-- 使用v-if / v-else-if / v-else做条件渲染 -->
+        <h2 v-if="isShow2">Hello2</h2>
+        <h2 v-else>Hello2已被隐藏</h2>
+        <button @click="changeMod2">点我{{ state2 }}Hello2</button>
+
+        <!-- 使用template标签包裹内容，实现条件渲染 -->
+        <template v-if="isShow1">
+            <h2>Hello3</h2>
+            <h2>Hello4</h2>
+        </template>
+    </div>
+
+    <script>
+        new Vue({
+            el:'#root',    
+            data:{
+                isShow1:true,
+                state1:"隐藏",
+                isShow2:true,
+                state2:"隐藏"
+            },
+            methods:{
+                changeMod1(){
+                    this.isShow1 = !this.isShow1
+                    if(this.isShow){
+                        this.state1 = "隐藏"
+                    }else{
+                        this.state1 = "显示"
+                    }
+                },
+                changeMod2(){
+                    this.isShow2 = !this.isShow2
+                    if(this.isShow2){
+                        this.state2 = "隐藏"
+                    }else{
+                        this.state2 = "显示"
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+</html>

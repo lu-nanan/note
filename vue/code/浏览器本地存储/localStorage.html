@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>浏览器本地存储演示</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .operation-box {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #storageView {
+            background: #f5f5f5;
+            padding: 15px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="operation-box">
+        <h3>数据操作</h3>
+        <input type="text" id="keyInput" placeholder="输入键名">
+        <input type="text" id="valueInput" placeholder="输入值">
+        <button onclick="saveData()">保存数据</button>
+        <button onclick="loadData()">读取数据</button>
+        <button onclick="removeData()">删除数据</button>
+        <button onclick="clearStorage()">清空存储</button>
+    </div>
+
+    <div class="operation-box">
+        <h3>对象存储演示</h3>
+        <button onclick="saveObject()">存储用户对象</button>
+        <button onclick="loadObject()">读取用户对象</button>
+    </div>
+
+    <div id="storageView">
+        <strong>当前存储内容：</strong><br>
+        <!-- 存储内容动态显示 -->
+    </div>
+
+    <script>
+        // 实时显示存储内容
+        function updateStorageView() {
+            const storage = {...localStorage};
+            document.getElementById('storageView').innerHTML = 
+                `<strong>当前存储内容：</strong>\n${JSON.stringify(storage, null, 4)}`;
+        }
+
+        // 基础操作函数
+        function saveData() {
+            const key = document.getElementById('keyInput').value;
+            const value = document.getElementById('valueInput').value;
+            if(key && value) {
+                localStorage.setItem(key, value);
+                updateStorageView();
+            }
+        }
+
+        function loadData() {
+            const key = document.getElementById('keyInput').value;
+            const value = localStorage.getItem(key);
+            alert(value || "该键不存在");
+        }
+
+        function removeData() {
+            const key = document.getElementById('keyInput').value;
+            localStorage.removeItem(key);
+            updateStorageView();
+        }
+
+        function clearStorage() {
+            localStorage.clear();
+            updateStorageView();
+        }
+
+        // 对象存储演示
+        function saveObject() {
+            const user = {
+                name: "张三",
+                age: 30,
+                preferences: {
+                    theme: "dark",
+                    fontSize: 16
+                }
+            };
+            localStorage.setItem('user', JSON.stringify(user));
+            updateStorageView();
+        }
+
+        function loadObject() {
+            const userStr = localStorage.getItem('user');
+            if(userStr) {
+                const user = JSON.parse(userStr);
+                alert(`姓名：${user.name}\n年龄：${user.age}`);
+            } else {
+                alert("用户信息不存在");
+            }
+        }
+
+        // 初始化显示
+        updateStorageView();
+    </script>
+</body>
+</html>

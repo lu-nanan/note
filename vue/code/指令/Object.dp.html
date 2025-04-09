@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object.defineproperty方法</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <script>
+
+        let number = 18
+
+        let person = {
+            name:'张三',
+            sex:'男'
+        }
+
+        Object.defineProperty(person,'age',{
+            //value:18,  //直接指定值，或用getter
+            //enumerable:true, //是否可枚举
+            //configurable:true, //是否可配置
+            //writable:true, //是否可修改
+            //configurable:false, //是否可配置
+            get:function(){
+                console.log('有人读取了age属性')
+                return number
+            },
+
+            set:function(newValue){
+                console.log('有人修改了age属性')
+                number = newValue
+            }
+        })
+
+        console.log(Object.keys(person))
+        //输出：[ 'name', 'sex' ]
+        console.log(person)
+        //输出：{ name: '张三', sex: '男' }
+
+
+        let obj = {x:100}
+        let obj2 = {y:200}
+
+        Object.defineProperty(obj,'y',{
+            get:function(){
+                return obj2.y
+            },
+            set:function(newValue){
+                obj2.y = newValue
+            }
+        })
+    </script>
+</body>
+</html>

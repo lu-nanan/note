@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <button v-on:click="showInfo">点我</button>
+        <!-- <button @click="showInfo">点我</button> -->
+         <button @click="showInfo2(66,$event)">点我2</button>
+        <!-- 防止event部分丢失，$event占位 -->
+    </div>
+
+    <script>
+        Vue.config.productionTip = false; // 关闭生产模式下给出的提示
+
+        //创建Vue实例
+        new Vue({
+            el:'#root',  
+            data:{
+                name:'Vue!' 
+            },
+            methods:{
+                showInfo(event){
+                    //console.log(event.target.innerText)  // 打印按钮文本
+                    //console.log(this)  // this指向当前Vue实例
+                    alert('This is a Vue!')
+                },
+
+                showInfo2(number,a){
+                    console.log(a)  // 打印a,a为event对象
+                    alert('This is a Vue!' + number)
+                }
+            }
+        })
+    </script>
+</body>
+</html>

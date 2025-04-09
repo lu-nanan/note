@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        姓：<input type="text" v-model:value="firstname">  <br/><br/>
+        名：<input type="text" v-model:value="lastname">   <br/><br/>
+        <!-- 插值语法实现 -->
+        <!-- 全名: <span>{{ firstname + '-' + lastname }}</span> -->
+
+        <!-- methods 实现-->
+        <!-- 全名: <span>{{ fullname() }}</span> -->
+
+        <!-- 计算属性实现 -->
+        全名: <span>{{ fullname }}</span>
+    </div>
+
+    <script>
+        new Vue({
+            el:'#root',  
+            data:{
+                firstname:'张',
+                lastname:'三'
+            },
+            // methods:{
+            //     fullname(){
+            //         return this.firstname + '-' + this.lastname
+            //     }
+            // },
+            computed:{
+                fullname:{
+                    //get的作用：当有人读取fullname时，会执行get
+                    //get什么时候调用：
+                    //          1.第一次读取fullname时
+                    //          2.当依赖的数据发生变化时（firstname和lastname）
+                    get(){
+                        console.log('get被调用了')
+                        return this.firstname + '-' + this.lastname
+                    },
+                    set(newValue){
+                        console.log('set被调用了')
+                        const arr = newValue.split('-')
+                        this.firstname = arr[0]
+                        this.lastname = arr[1]
+                    }
+                }
+            }
+
+        })
+    </script>
+</body>
+</html>

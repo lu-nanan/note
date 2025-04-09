@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生命周期</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="root">
+        <h2>当前的n的值是 {{n}}</h2>
+        <button @click="add">点我n++</button>
+        <button @click="bye">点我销毁vm</button>
+    </div>
+
+    <script>
+        const vm = new Vue({
+            el:'#root',    
+            data:{
+                n:1,
+            },
+            methods: {
+                add(){
+                    console.log('add')
+                    this.n++
+                },
+                bye(){
+                    this.$destroy()
+                }
+            },
+            watch:{
+                n(){
+                    console.log('n变了')
+                }
+            },
+            beforeCreate() {
+                console.log('beforeCreate')
+            },
+            created() {
+                console.log('created')
+            },
+            beforeMount() {
+                console.log('beforeMount')
+            },
+            mounted() {
+                console.log('mounted')
+            },
+            beforeUpdate() {
+                console.log('beforeUpdate')
+            },
+            updated() {
+                console.log('updated')
+                this.n = 6
+            },
+            beforeDestroy() {
+                console.log('beforeDestroy')
+                this.n = 99
+                //页面不会变了
+            },
+            destroyed() {
+                console.log('destroyed')
+            }
+        })
+    </script>
+</body>
+</html>
