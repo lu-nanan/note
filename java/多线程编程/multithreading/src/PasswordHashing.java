@@ -1,5 +1,3 @@
-package 多线程编程.multithreading.src;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -30,7 +28,7 @@ public class PasswordHashing {
 
     public static void main(String[] args) throws NoSuchAlgorithmException {
         // 示例演示了密码哈希和加盐存储的过程
-        String password = "myPassword123";
+        String password = "123456";
         String salt = generateSalt();
         String hashedPassword = hashPassword(password, salt);
 

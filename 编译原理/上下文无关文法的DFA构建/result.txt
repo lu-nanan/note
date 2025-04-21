@@ -1,0 +1,815 @@
+=== First Sets ===
+program: if repeat identifier read write
+stmt-seq: if repeat identifier read write
+stmt: if repeat identifier read write
+if-stmt: if
+repeat-stmt: repeat
+assign-stmt: identifier
+read-stmt: read
+write-stmt: write
+exp: ( identifier number
+relop: < > = <= >= <>
+simple-exp: ( identifier number
+term: ( identifier number
+factor: ( identifier number
+addop: + -
+mulop: * /
+=== Follow Sets ===
+program: $
+stmt-seq: $ ; end else until
+stmt: $ ; end else until
+if-stmt: $ ; end else until
+repeat-stmt: $ ; end else until
+assign-stmt: $ ; end else until
+read-stmt: $ ; end else until
+write-stmt: $ ; end else until
+exp: )
+relop: ( identifier number
+simple-exp: $ ; end else until < > = <= >= <> ) + -
+term: $ ; end else until < > = <= >= <> ) + - * /
+factor: $ ; end else until < > = <= >= <> ) + - * /
+addop: ( identifier number
+mulop: ( identifier number
+=== DFA Item Sets ===
+State 0:
+  S' -> .program
+  program -> .stmt-seq
+  stmt-seq -> .stmt 
+  stmt-seq -> .stmt-seq ; stmt
+  stmt -> .if-stmt
+  stmt -> .repeat-stmt
+  stmt -> .assign-stmt
+  stmt -> .read-stmt
+  stmt -> .write-stmt
+  if-stmt -> .if ( exp ) then stmt-seq end
+  if-stmt -> .if ( exp ) then stmt-seq else stmt-seq end
+  repeat-stmt -> .repeat stmt-seq until ( exp )
+  assign-stmt -> .identifier := simple-exp
+  read-stmt -> .read identifier
+  write-stmt -> .write simple-exp
+State 1:
+  S' -> program .
+State 2:
+  program -> stmt-seq .
+  stmt-seq -> stmt-seq .; stmt
+State 3:
+  stmt-seq -> stmt .
+State 4:
+  stmt -> if-stmt .
+State 5:
+  stmt -> repeat-stmt .
+State 6:
+  stmt -> assign-stmt .
+State 7:
+  stmt -> read-stmt .
+State 8:
+  stmt -> write-stmt .
+State 9:
+  if-stmt -> if .( exp ) then stmt-seq end
+  if-stmt -> if .( exp ) then stmt-seq else stmt-seq end
+State 10:
+  repeat-stmt -> repeat .stmt-seq until ( exp )
+  stmt-seq -> .stmt
+  stmt-seq -> .stmt-seq ; stmt
+  stmt -> .if-stmt
+  stmt -> .repeat-stmt
+  stmt -> .assign-stmt
+  stmt -> .read-stmt
+  stmt -> .write-stmt
+  if-stmt -> .if ( exp ) then stmt-seq end
+  if-stmt -> .if ( exp ) then stmt-seq else stmt-seq end
+  repeat-stmt -> .repeat stmt-seq until ( exp )
+  assign-stmt -> .identifier := simple-exp
+  read-stmt -> .read identifier
+  write-stmt -> .write simple-exp
+State 11:
+  assign-stmt -> identifier .:= simple-exp
+State 12:
+  read-stmt -> read .identifier
+State 13:
+  write-stmt -> write .simple-exp
+  simple-exp -> .term
+  simple-exp -> .simple-exp addop term
+  term -> .factor
+  term -> .term mulop factor
+  factor -> .( simple-exp )
+  factor -> .identifier
+  factor -> .number
+State 14:
+  stmt-seq -> stmt-seq ; .stmt
+  stmt -> .if-stmt
+  stmt -> .repeat-stmt
+  stmt -> .assign-stmt
+  stmt -> .read-stmt
+  stmt -> .write-stmt
+  if-stmt -> .if ( exp ) then stmt-seq end
+  if-stmt -> .if ( exp ) then stmt-seq else stmt-seq end
+  repeat-stmt -> .repeat stmt-seq until ( exp )
+  assign-stmt -> .identifier := simple-exp
+  read-stmt -> .read identifier
+  write-stmt -> .write simple-exp
+State 15:
+  if-stmt -> if ( .exp ) then stmt-seq end
+  if-stmt -> if ( .exp ) then stmt-seq else stmt-seq end
+  exp -> .simple-exp relop simple-exp
+  simple-exp -> .term
+  simple-exp -> .simple-exp addop term
+  term -> .factor
+  term -> .term mulop factor
+  factor -> .( simple-exp )
+  factor -> .identifier
+  factor -> .number
+State 16:
+  repeat-stmt -> repeat stmt-seq .until ( exp )
+  stmt-seq -> stmt-seq .; stmt
+State 17:
+  assign-stmt -> identifier := .simple-exp
+  simple-exp -> .term
+  simple-exp -> .simple-exp addop term
+  term -> .factor
+  term -> .term mulop factor
+  factor -> .( simple-exp )
+  factor -> .identifier
+  factor -> .number
+State 18:
+  read-stmt -> read identifier .
+State 19:
+  write-stmt -> write simple-exp .
+  simple-exp -> simple-exp .addop term
+  addop -> .+
+  addop -> .-
+State 20:
+  simple-exp -> term .
+  term -> term .mulop factor
+  mulop -> .*
+  mulop -> ./
+State 21:
+  term -> factor .
+State 22:
+  factor -> ( .simple-exp )
+  simple-exp -> .term
+  simple-exp -> .simple-exp addop term
+  term -> .factor
+  term -> .term mulop factor
+  factor -> .( simple-exp )
+  factor -> .identifier
+  factor -> .number
+State 23:
+  factor -> identifier .
+State 24:
+  factor -> number .
+State 25:
+  stmt-seq -> stmt-seq ; stmt .
+State 26:
+  if-stmt -> if ( exp .) then stmt-seq end
+  if-stmt -> if ( exp .) then stmt-seq else stmt-seq end
+State 27:
+  exp -> simple-exp .relop simple-exp
+  simple-exp -> simple-exp .addop term
+  relop -> .<
+  relop -> .>
+  relop -> .=
+  relop -> .<=
+  relop -> .>=
+  relop -> .<>
+  addop -> .+
+  addop -> .-
+State 28:
+  repeat-stmt -> repeat stmt-seq until .( exp )
+State 29:
+  assign-stmt -> identifier := simple-exp .
+  simple-exp -> simple-exp .addop term
+  addop -> .+
+  addop -> .-
+State 30:
+  simple-exp -> simple-exp addop .term
+  term -> .factor
+  term -> .term mulop factor
+  factor -> .( simple-exp )
+  factor -> .identifier
+  factor -> .number
+State 31:
+  addop -> + .
+State 32:
+  addop -> - .
+State 33:
+  term -> term mulop .factor
+  factor -> .( simple-exp )
+  factor -> .identifier
+  factor -> .number
+State 34:
+  mulop -> * .
+State 35:
+  mulop -> / .
+State 36:
+  factor -> ( simple-exp .)
+  simple-exp -> simple-exp .addop term
+  addop -> .+
+  addop -> .-
+State 37:
+  if-stmt -> if ( exp ) .then stmt-seq end
+  if-stmt -> if ( exp ) .then stmt-seq else stmt-seq end
+State 38:
+  exp -> simple-exp relop .simple-exp
+  simple-exp -> .term
+  simple-exp -> .simple-exp addop term
+  term -> .factor
+  term -> .term mulop factor
+  factor -> .( simple-exp )
+  factor -> .identifier
+  factor -> .number
+State 39:
+  relop -> < .
+State 40:
+  relop -> > .
+State 41:
+  relop -> = .
+State 42:
+  relop -> <= .
+State 43:
+  relop -> >= .
+State 44:
+  relop -> <> .
+State 45:
+  repeat-stmt -> repeat stmt-seq until ( .exp )
+  exp -> .simple-exp relop simple-exp
+  simple-exp -> .term
+  simple-exp -> .simple-exp addop term
+  term -> .factor
+  term -> .term mulop factor
+  factor -> .( simple-exp )
+  factor -> .identifier
+  factor -> .number
+State 46:
+  simple-exp -> simple-exp addop term .
+  term -> term .mulop factor
+  mulop -> .*
+  mulop -> ./
+State 47:
+  term -> term mulop factor .
+State 48:
+  factor -> ( simple-exp ) .
+State 49:
+  if-stmt -> if ( exp ) then .stmt-seq end
+  if-stmt -> if ( exp ) then .stmt-seq else stmt-seq end
+  stmt-seq -> .stmt
+  stmt-seq -> .stmt-seq ; stmt
+  stmt -> .if-stmt
+  stmt -> .repeat-stmt
+  stmt -> .assign-stmt
+  stmt -> .read-stmt
+  stmt -> .write-stmt
+  if-stmt -> .if ( exp ) then stmt-seq end
+  if-stmt -> .if ( exp ) then stmt-seq else stmt-seq end
+  repeat-stmt -> .repeat stmt-seq until ( exp )
+  assign-stmt -> .identifier := simple-exp
+  read-stmt -> .read identifier
+  write-stmt -> .write simple-exp
+State 50:
+  exp -> simple-exp relop simple-exp .
+  simple-exp -> simple-exp .addop term
+  addop -> .+
+  addop -> .-
+State 51:
+  repeat-stmt -> repeat stmt-seq until ( exp .)
+State 52:
+  if-stmt -> if ( exp ) then stmt-seq .end
+  if-stmt -> if ( exp ) then stmt-seq .else stmt-seq end
+  stmt-seq -> stmt-seq .; stmt
+State 53:
+  repeat-stmt -> repeat stmt-seq until ( exp ) .
+State 54:
+  if-stmt -> if ( exp ) then stmt-seq end .
+State 55:
+  if-stmt -> if ( exp ) then stmt-seq else .stmt-seq end
+  stmt-seq -> .stmt
+  stmt-seq -> .stmt-seq ; stmt
+  stmt -> .if-stmt
+  stmt -> .repeat-stmt
+  stmt -> .assign-stmt
+  stmt -> .read-stmt
+  stmt -> .write-stmt
+  if-stmt -> .if ( exp ) then stmt-seq end
+  if-stmt -> .if ( exp ) then stmt-seq else stmt-seq end
+  repeat-stmt -> .repeat stmt-seq until ( exp )
+  assign-stmt -> .identifier := simple-exp
+  read-stmt -> .read identifier
+  write-stmt -> .write simple-exp
+State 56:
+  if-stmt -> if ( exp ) then stmt-seq else stmt-seq .end
+  stmt-seq -> stmt-seq .; stmt
+State 57:
+  if-stmt -> if ( exp ) then stmt-seq else stmt-seq end .
+=== Transition Edges ===
+From 0 on program to 1
+From 0 on stmt-seq to 2
+From 0 on stmt to 3
+From 0 on if-stmt to 4
+From 0 on repeat-stmt to 5
+From 0 on assign-stmt to 6
+From 0 on read-stmt to 7
+From 0 on write-stmt to 8
+From 0 on if to 9
+From 0 on repeat to 10
+From 0 on identifier to 11
+From 0 on read to 12
+From 0 on write to 13
+From 2 on ; to 14
+From 9 on ( to 15
+From 10 on stmt-seq to 16
+From 10 on stmt to 3
+From 10 on if-stmt to 4
+From 10 on repeat-stmt to 5
+From 10 on assign-stmt to 6
+From 10 on read-stmt to 7
+From 10 on write-stmt to 8
+From 10 on if to 9
+From 10 on repeat to 10
+From 10 on identifier to 11
+From 10 on read to 12
+From 10 on write to 13
+From 11 on := to 17
+From 12 on identifier to 18
+From 13 on simple-exp to 19
+From 13 on term to 20
+From 13 on factor to 21
+From 13 on ( to 22
+From 13 on identifier to 23
+From 13 on number to 24
+From 14 on stmt to 25
+From 14 on if-stmt to 4
+From 14 on repeat-stmt to 5
+From 14 on assign-stmt to 6
+From 14 on read-stmt to 7
+From 14 on write-stmt to 8
+From 14 on if to 9
+From 14 on repeat to 10
+From 14 on identifier to 11
+From 14 on read to 12
+From 14 on write to 13
+From 15 on exp to 26
+From 15 on simple-exp to 27
+From 15 on term to 20
+From 15 on factor to 21
+From 15 on ( to 22
+From 15 on identifier to 23
+From 15 on number to 24
+From 16 on until to 28
+From 16 on ; to 14
+From 17 on simple-exp to 29
+From 17 on term to 20
+From 17 on factor to 21
+From 17 on ( to 22
+From 17 on identifier to 23
+From 17 on number to 24
+From 19 on addop to 30
+From 19 on + to 31
+From 19 on - to 32
+From 20 on mulop to 33
+From 20 on * to 34
+From 20 on / to 35
+From 22 on simple-exp to 36
+From 22 on term to 20
+From 22 on factor to 21
+From 22 on ( to 22
+From 22 on identifier to 23
+From 22 on number to 24
+From 26 on ) to 37
+From 27 on relop to 38
+From 27 on addop to 30
+From 27 on < to 39
+From 27 on > to 40
+From 27 on = to 41
+From 27 on <= to 42
+From 27 on >= to 43
+From 27 on <> to 44
+From 27 on + to 31
+From 27 on - to 32
+From 28 on ( to 45
+From 29 on addop to 30
+From 29 on + to 31
+From 29 on - to 32
+From 30 on term to 46
+From 30 on factor to 21
+From 30 on ( to 22
+From 30 on identifier to 23
+From 30 on number to 24
+From 33 on factor to 47
+From 33 on ( to 22
+From 33 on identifier to 23
+From 33 on number to 24
+From 36 on ) to 48
+From 36 on addop to 30
+From 36 on + to 31
+From 36 on - to 32
+From 37 on then to 49
+From 38 on simple-exp to 50
+From 38 on term to 20
+From 38 on factor to 21
+From 38 on ( to 22
+From 38 on identifier to 23
+From 38 on number to 24
+From 45 on exp to 51
+From 45 on simple-exp to 27
+From 45 on term to 20
+From 45 on factor to 21
+From 45 on ( to 22
+From 45 on identifier to 23
+From 45 on number to 24
+From 46 on mulop to 33
+From 46 on * to 34
+From 46 on / to 35
+From 49 on stmt-seq to 52
+From 49 on stmt to 3
+From 49 on if-stmt to 4
+From 49 on repeat-stmt to 5
+From 49 on assign-stmt to 6
+From 49 on read-stmt to 7
+From 49 on write-stmt to 8
+From 49 on if to 9
+From 49 on repeat to 10
+From 49 on identifier to 11
+From 49 on read to 12
+From 49 on write to 13
+From 50 on addop to 30
+From 50 on + to 31
+From 50 on - to 32
+From 51 on ) to 53
+From 52 on end to 54
+From 52 on else to 55
+From 52 on ; to 14
+From 55 on stmt-seq to 56
+From 55 on stmt to 3
+From 55 on if-stmt to 4
+From 55 on repeat-stmt to 5
+From 55 on assign-stmt to 6
+From 55 on read-stmt to 7
+From 55 on write-stmt to 8
+From 55 on if to 9
+From 55 on repeat to 10
+From 55 on identifier to 11
+From 55 on read to 12
+From 55 on write to 13
+From 56 on end to 57
+From 56 on ; to 14
+=== SLR(1) Check ===
+The grammar is SLR(1)
+=== Action Table ===
+State 0, if: SHIFT 9
+State 0, repeat: SHIFT 10
+State 0, identifier: SHIFT 11
+State 0, read: SHIFT 12
+State 0, write: SHIFT 13
+State 2, ;: SHIFT 14
+State 9, (: SHIFT 15
+State 10, if: SHIFT 9
+State 10, repeat: SHIFT 10
+State 10, identifier: SHIFT 11
+State 10, read: SHIFT 12
+State 10, write: SHIFT 13
+State 11, :=: SHIFT 17
+State 12, identifier: SHIFT 18
+State 13, (: SHIFT 22
+State 13, identifier: SHIFT 23
+State 13, number: SHIFT 24
+State 14, if: SHIFT 9
+State 14, repeat: SHIFT 10
+State 14, identifier: SHIFT 11
+State 14, read: SHIFT 12
+State 14, write: SHIFT 13
+State 15, (: SHIFT 22
+State 15, identifier: SHIFT 23
+State 15, number: SHIFT 24
+State 16, until: SHIFT 28
+State 16, ;: SHIFT 14
+State 17, (: SHIFT 22
+State 17, identifier: SHIFT 23
+State 17, number: SHIFT 24
+State 19, +: SHIFT 31
+State 19, -: SHIFT 32
+State 20, *: SHIFT 34
+State 20, /: SHIFT 35
+State 22, (: SHIFT 22
+State 22, identifier: SHIFT 23
+State 22, number: SHIFT 24
+State 26, ): SHIFT 37
+State 27, <: SHIFT 39
+State 27, >: SHIFT 40
+State 27, =: SHIFT 41
+State 27, <=: SHIFT 42
+State 27, >=: SHIFT 43
+State 27, <>: SHIFT 44
+State 27, +: SHIFT 31
+State 27, -: SHIFT 32
+State 28, (: SHIFT 45
+State 29, +: SHIFT 31
+State 29, -: SHIFT 32
+State 30, (: SHIFT 22
+State 30, identifier: SHIFT 23
+State 30, number: SHIFT 24
+State 33, (: SHIFT 22
+State 33, identifier: SHIFT 23
+State 33, number: SHIFT 24
+State 36, ): SHIFT 48
+State 36, +: SHIFT 31
+State 36, -: SHIFT 32
+State 37, then: SHIFT 49
+State 38, (: SHIFT 22
+State 38, identifier: SHIFT 23
+State 38, number: SHIFT 24
+State 45, (: SHIFT 22
+State 45, identifier: SHIFT 23
+State 45, number: SHIFT 24
+State 46, *: SHIFT 34
+State 46, /: SHIFT 35
+State 49, if: SHIFT 9
+State 49, repeat: SHIFT 10
+State 49, identifier: SHIFT 11
+State 49, read: SHIFT 12
+State 49, write: SHIFT 13
+State 50, +: SHIFT 31
+State 50, -: SHIFT 32
+State 51, ): SHIFT 53
+State 52, end: SHIFT 54
+State 52, else: SHIFT 55
+State 52, ;: SHIFT 14
+State 55, if: SHIFT 9
+State 55, repeat: SHIFT 10
+State 55, identifier: SHIFT 11
+State 55, read: SHIFT 12
+State 55, write: SHIFT 13
+State 56, end: SHIFT 57
+State 56, ;: SHIFT 14
+State 1, $: ACCEPT
+State 2, $: REDUCE 1
+State 3, $: REDUCE 2
+State 3, ;: REDUCE 2
+State 3, end: REDUCE 2
+State 3, else: REDUCE 2
+State 3, until: REDUCE 2
+State 4, $: REDUCE 4
+State 4, ;: REDUCE 4
+State 4, end: REDUCE 4
+State 4, else: REDUCE 4
+State 4, until: REDUCE 4
+State 5, $: REDUCE 5
+State 5, ;: REDUCE 5
+State 5, end: REDUCE 5
+State 5, else: REDUCE 5
+State 5, until: REDUCE 5
+State 6, $: REDUCE 6
+State 6, ;: REDUCE 6
+State 6, end: REDUCE 6
+State 6, else: REDUCE 6
+State 6, until: REDUCE 6
+State 7, $: REDUCE 7
+State 7, ;: REDUCE 7
+State 7, end: REDUCE 7
+State 7, else: REDUCE 7
+State 7, until: REDUCE 7
+State 8, $: REDUCE 8
+State 8, ;: REDUCE 8
+State 8, end: REDUCE 8
+State 8, else: REDUCE 8
+State 8, until: REDUCE 8
+State 18, $: REDUCE 13
+State 18, ;: REDUCE 13
+State 18, end: REDUCE 13
+State 18, else: REDUCE 13
+State 18, until: REDUCE 13
+State 19, $: REDUCE 14
+State 19, ;: REDUCE 14
+State 19, end: REDUCE 14
+State 19, else: REDUCE 14
+State 19, until: REDUCE 14
+State 20, $: REDUCE 22
+State 20, ;: REDUCE 22
+State 20, end: REDUCE 22
+State 20, else: REDUCE 22
+State 20, until: REDUCE 22
+State 20, <: REDUCE 22
+State 20, >: REDUCE 22
+State 20, =: REDUCE 22
+State 20, <=: REDUCE 22
+State 20, >=: REDUCE 22
+State 20, <>: REDUCE 22
+State 20, ): REDUCE 22
+State 20, +: REDUCE 22
+State 20, -: REDUCE 22
+State 21, $: REDUCE 24
+State 21, ;: REDUCE 24
+State 21, end: REDUCE 24
+State 21, else: REDUCE 24
+State 21, until: REDUCE 24
+State 21, <: REDUCE 24
+State 21, >: REDUCE 24
+State 21, =: REDUCE 24
+State 21, <=: REDUCE 24
+State 21, >=: REDUCE 24
+State 21, <>: REDUCE 24
+State 21, ): REDUCE 24
+State 21, +: REDUCE 24
+State 21, -: REDUCE 24
+State 21, *: REDUCE 24
+State 21, /: REDUCE 24
+State 23, $: REDUCE 27
+State 23, ;: REDUCE 27
+State 23, end: REDUCE 27
+State 23, else: REDUCE 27
+State 23, until: REDUCE 27
+State 23, <: REDUCE 27
+State 23, >: REDUCE 27
+State 23, =: REDUCE 27
+State 23, <=: REDUCE 27
+State 23, >=: REDUCE 27
+State 23, <>: REDUCE 27
+State 23, ): REDUCE 27
+State 23, +: REDUCE 27
+State 23, -: REDUCE 27
+State 23, *: REDUCE 27
+State 23, /: REDUCE 27
+State 24, $: REDUCE 28
+State 24, ;: REDUCE 28
+State 24, end: REDUCE 28
+State 24, else: REDUCE 28
+State 24, until: REDUCE 28
+State 24, <: REDUCE 28
+State 24, >: REDUCE 28
+State 24, =: REDUCE 28
+State 24, <=: REDUCE 28
+State 24, >=: REDUCE 28
+State 24, <>: REDUCE 28
+State 24, ): REDUCE 28
+State 24, +: REDUCE 28
+State 24, -: REDUCE 28
+State 24, *: REDUCE 28
+State 24, /: REDUCE 28
+State 25, $: REDUCE 3
+State 25, ;: REDUCE 3
+State 25, end: REDUCE 3
+State 25, else: REDUCE 3
+State 25, until: REDUCE 3
+State 29, $: REDUCE 12
+State 29, ;: REDUCE 12
+State 29, end: REDUCE 12
+State 29, else: REDUCE 12
+State 29, until: REDUCE 12
+State 31, (: REDUCE 29
+State 31, identifier: REDUCE 29
+State 31, number: REDUCE 29
+State 32, (: REDUCE 30
+State 32, identifier: REDUCE 30
+State 32, number: REDUCE 30
+State 34, (: REDUCE 31
+State 34, identifier: REDUCE 31
+State 34, number: REDUCE 31
+State 35, (: REDUCE 32
+State 35, identifier: REDUCE 32
+State 35, number: REDUCE 32
+State 39, (: REDUCE 16
+State 39, identifier: REDUCE 16
+State 39, number: REDUCE 16
+State 40, (: REDUCE 17
+State 40, identifier: REDUCE 17
+State 40, number: REDUCE 17
+State 41, (: REDUCE 18
+State 41, identifier: REDUCE 18
+State 41, number: REDUCE 18
+State 42, (: REDUCE 19
+State 42, identifier: REDUCE 19
+State 42, number: REDUCE 19
+State 43, (: REDUCE 20
+State 43, identifier: REDUCE 20
+State 43, number: REDUCE 20
+State 44, (: REDUCE 21
+State 44, identifier: REDUCE 21
+State 44, number: REDUCE 21
+State 46, $: REDUCE 23
+State 46, ;: REDUCE 23
+State 46, end: REDUCE 23
+State 46, else: REDUCE 23
+State 46, until: REDUCE 23
+State 46, <: REDUCE 23
+State 46, >: REDUCE 23
+State 46, =: REDUCE 23
+State 46, <=: REDUCE 23
+State 46, >=: REDUCE 23
+State 46, <>: REDUCE 23
+State 46, ): REDUCE 23
+State 46, +: REDUCE 23
+State 46, -: REDUCE 23
+State 47, $: REDUCE 25
+State 47, ;: REDUCE 25
+State 47, end: REDUCE 25
+State 47, else: REDUCE 25
+State 47, until: REDUCE 25
+State 47, <: REDUCE 25
+State 47, >: REDUCE 25
+State 47, =: REDUCE 25
+State 47, <=: REDUCE 25
+State 47, >=: REDUCE 25
+State 47, <>: REDUCE 25
+State 47, ): REDUCE 25
+State 47, +: REDUCE 25
+State 47, -: REDUCE 25
+State 47, *: REDUCE 25
+State 47, /: REDUCE 25
+State 48, $: REDUCE 26
+State 48, ;: REDUCE 26
+State 48, end: REDUCE 26
+State 48, else: REDUCE 26
+State 48, until: REDUCE 26
+State 48, <: REDUCE 26
+State 48, >: REDUCE 26
+State 48, =: REDUCE 26
+State 48, <=: REDUCE 26
+State 48, >=: REDUCE 26
+State 48, <>: REDUCE 26
+State 48, ): REDUCE 26
+State 48, +: REDUCE 26
+State 48, -: REDUCE 26
+State 48, *: REDUCE 26
+State 48, /: REDUCE 26
+State 50, ): REDUCE 15
+State 53, $: REDUCE 11
+State 53, ;: REDUCE 11
+State 53, end: REDUCE 11
+State 53, else: REDUCE 11
+State 53, until: REDUCE 11
+State 54, $: REDUCE 9
+State 54, ;: REDUCE 9
+State 54, end: REDUCE 9
+State 54, else: REDUCE 9
+State 54, until: REDUCE 9
+State 57, $: REDUCE 10
+State 57, ;: REDUCE 10
+State 57, end: REDUCE 10
+State 57, else: REDUCE 10
+State 57, until: REDUCE 10
+=== Goto Table ===
+State 0, program: 1
+State 0, stmt-seq: 2
+State 0, stmt: 3
+State 0, if-stmt: 4
+State 0, repeat-stmt: 5
+State 0, assign-stmt: 6
+State 0, read-stmt: 7
+State 0, write-stmt: 8
+State 10, stmt-seq: 16
+State 10, stmt: 3
+State 10, if-stmt: 4
+State 10, repeat-stmt: 5
+State 10, assign-stmt: 6
+State 10, read-stmt: 7
+State 10, write-stmt: 8
+State 13, simple-exp: 19
+State 13, term: 20
+State 13, factor: 21
+State 14, stmt: 25
+State 14, if-stmt: 4
+State 14, repeat-stmt: 5
+State 14, assign-stmt: 6
+State 14, read-stmt: 7
+State 14, write-stmt: 8
+State 15, exp: 26
+State 15, simple-exp: 27
+State 15, term: 20
+State 15, factor: 21
+State 17, simple-exp: 29
+State 17, term: 20
+State 17, factor: 21
+State 19, addop: 30
+State 20, mulop: 33
+State 22, simple-exp: 36
+State 22, term: 20
+State 22, factor: 21
+State 27, relop: 38
+State 27, addop: 30
+State 29, addop: 30
+State 30, term: 46
+State 30, factor: 21
+State 33, factor: 47
+State 36, addop: 30
+State 38, simple-exp: 50
+State 38, term: 20
+State 38, factor: 21
+State 45, exp: 51
+State 45, simple-exp: 27
+State 45, term: 20
+State 45, factor: 21
+State 46, mulop: 33
+State 49, stmt-seq: 52
+State 49, stmt: 3
+State 49, if-stmt: 4
+State 49, repeat-stmt: 5
+State 49, assign-stmt: 6
+State 49, read-stmt: 7
+State 49, write-stmt: 8
+State 50, addop: 30
+State 55, stmt-seq: 56
+State 55, stmt: 3
+State 55, if-stmt: 4
+State 55, repeat-stmt: 5
+State 55, assign-stmt: 6
+State 55, read-stmt: 7
+State 55, write-stmt: 8
