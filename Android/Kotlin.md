@@ -1555,6 +1555,6 @@ fun main() {
 }
 ```
 
-详细的内容见：[协程.md](https://github.com/lu-nanan/note/blob/main/%20Android/协程.md)
+详细的内容见：[协程.md](https://github.com/lu-nanan/note/blob/main/Android/协程.md)
 
  
