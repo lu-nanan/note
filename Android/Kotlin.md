@@ -1555,6 +1555,6 @@ fun main() {
 }
 ```
 
-详细的内容见：[协程.md](obsidian://open?vault=note&file=%E5%8D%8F%E7%A8%8B)
+详细的内容见：[协程.md](https://github.com/lu-nanan/note/blob/main/%20Android/协程.md)
 
  
